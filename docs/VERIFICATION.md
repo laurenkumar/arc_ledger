@@ -16,7 +16,7 @@ Deployment: https://arcledger-roan.vercel.app/
 
 A saved assignment is only a hash to recheck, never a paid claim. The request badge now says Recheck transfer, and opening that request offers a read-only receipt recheck instead of a new wallet payment. Generic requests are labelled Not verified; dashboard totals explicitly refer to this session. Two regression tests cover restored hints and isolation by request/network.
 
-Production validation of the correction is pending the automatic GitHub deployment. A new MetaMask signature and transfer on this Vercel origin has not been tested by the agent and remains participant-controlled.
+The v1.4.2 GitHub deployment completed successfully. A production reload displayed Recheck transfer for the recorded mainnet request. Opening it offered Recheck transaction receipt; clicking that control while the wallet remained disconnected re-read Arc RPC and rendered Transfer verified. No wallet session or new transaction was needed. A new MetaMask signature and transfer on this Vercel origin has not been tested by the agent and remains participant-controlled.
 
 ## Submission status
 
