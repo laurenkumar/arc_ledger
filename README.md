@@ -1,5 +1,7 @@
 # Arc Ledger
 
+Live app: https://arcledger-roan.vercel.app/
+
 Native-USDC payment requests and independently checked transfer receipts on Arc.
 
 Create a request, share its link, let the payer confirm a plain USDC transfer in their own wallet, and verify the transfer using its transaction hash. A recipient can also check a payment made outside the app without connecting either wallet.
@@ -29,7 +31,7 @@ The supplied receipt reports block 25917473 and a 0.00042-USDC fee. This is a bu
 
 A standard transfer proves the on-chain transfer facts. It does **not** cryptographically bind the payment to a particular invoice or reference; that association is a local bookkeeping choice. Legacy referenced transfers remain verifiable. Exported JSON is unsigned and should be rechecked against the chain before relying on it.
 
-Assignments are browser-local, not a global registry. The sender's real-world identity is not authenticated. There is no backend, exchange-deposit attribution, ERP integration, contract-account recipient support or smart-contract deployment in this version. This is a payment-request prototype, not a tax-invoicing system or an audited financial product.
+Assignments are browser-local, not a global registry. Live receipt results reset after reload; recorded hashes must be rechecked and never count as cached proof of payment. A recorded transfer changes the payment button into a read-only receipt check, avoiding a new transaction after reload. The sender's real-world identity is not authenticated. There is no backend, exchange-deposit attribution, ERP integration, contract-account recipient support or smart-contract deployment in this version. This is a payment-request prototype, not a tax-invoicing system or an audited financial product.
 
 ## Run and validate
 
@@ -43,7 +45,7 @@ python3 -m http.server 8080 --directory dist
 
 Open http://localhost:8080. Production must use HTTPS for wallet and clipboard APIs. Requests are stored under the origin where they were created; a new Vercel origin has its own browser workspace. Import the workspace JSON or use the demonstration button after moving hosts.
 
-63 automated tests cover amounts, receipts, wallet events, account selection, pending approvals, duplicate assignments and file export. They use simulated wallet/RPC/file APIs. The builder reported a working payment and export flow; the Vercel deployment still needs a browser smoke test.
+65 automated tests cover amounts, receipts, wallet events, account selection, pending approvals, duplicate assignments and file export. They use simulated wallet/RPC/file APIs. The public Vercel app was tested in a browser: mainnet RPC revalidation, receipt download, request creation and shared-link rendering. See [verification notes](docs/VERIFICATION.md).
 
 ## Deploy on Vercel
 

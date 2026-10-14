@@ -1,4 +1,4 @@
-# Mainnet evidence supplied by the builder
+# Mainnet demonstration and live RPC revalidation
 
 The builder supplied a receipt on October 14, 2026. It reports:
 
@@ -15,7 +15,7 @@ The builder supplied a receipt on October 14, 2026. It reports:
 
 [View transaction](https://explorer.arc.io/tx/0x84358a18cb166f494401757748a5e4be21f24aead683549306f89b2f20f9f972).
 
-Local checks confirmed the request schema, hash format, timestamp window and exact SHA-256 request digest. The development environment could not independently reload the explorer or RPC, so the table above is builder-supplied evidence, not a claimed independent revalidation.
+Local checks confirmed the request schema, hash format, timestamp window and exact SHA-256 request digest. On October 14, 2026, the public app at https://arcledger-roan.vercel.app/ independently re-read the transaction, receipt and block through Arc RPC in a browser. The exported JSON reports verifiedAt 1791983173772 (13:06:13.772 UTC), matching the supplied amount, sender, recipient, fee and block. The JSON download completed and was parsed successfully. This verifies transfer facts, not customer identity or an independent security audit.
 
 The app includes the request and hash in dist/demo.mjs, without a cached verification result. Click Verify mainnet demo on the public deployment to read the actual Arc RPC again. It checks chain, transaction hash, receipt status, matching inclusion block, recipient, value and timestamp. The result should show the sender and recipient and a 1-USDC transfer. An unavailable RPC must show an error, never a fabricated verified result.
 

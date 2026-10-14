@@ -1,11 +1,11 @@
 {
   "name": "arc-ledger",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "private": true,
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.mjs",
-    "check": "node --check dist/core.mjs && node --check dist/app.mjs && node --check dist/wallet.mjs && node --check dist/export.mjs && node --check dist/demo.mjs && node scripts/check-static.mjs"
+    "check": "node --check dist/core.mjs && node --check dist/app.mjs && node --check dist/wallet.mjs && node --check dist/export.mjs && node --check dist/demo.mjs && node --check dist/workspace.mjs && node scripts/check-static.mjs"
   },
   "license": "MIT"
 }

@@ -4,8 +4,8 @@ Checked October 14, 2026 against the [organizer's announcement](https://communit
 
 | Published requirement | Arc Ledger status |
 |---|---|
-| Working Arc mainnet component | Wallet transfers and read-only verification implemented; builder supplied a mainnet payment receipt |
-| Live deployment accessible to reviewers | Vercel-ready source; public deployment pending because the Vercel connection returned HTTP 403 on project creation |
+| Working Arc mainnet component | Wallet transfers implemented; mainnet demo independently revalidated through the public app and Arc RPC |
+| Live deployment accessible to reviewers | https://arcledger-roan.vercel.app/ opened without Vercel login |
 | Public repository | Source and documentation published in the dedicated public repository |
 | Short description and Arc relevance | Application draft describes native USDC payments, USDC fees and transfer verification |
 | Public builder profile | https://github.com/laurenkumar |
@@ -17,6 +17,6 @@ The published announcement accepts small working prototypes. It does not specify
 
 The linked terms explicitly support responsible AI-assisted content and code, while leaving responsibility with the participant. Any additional portal-specific instructions must still be checked at submission: the DoraHacks detail page returned HTTP 405 in this research environment. Do not claim those unseen fields were verified.
 
-Current technical validation: 63 unit tests plus static element/import checks. The real payment evidence is documented separately from simulated tests. Before submitting, test the public Vercel URL without authentication and recheck the mainnet demo via RPC.
+Current technical validation: 65 unit tests plus static element/import checks. The real payment evidence is documented separately from simulated tests. The public URL was opened without authentication and its demo was rechecked via RPC. A new MetaMask transaction on the Vercel origin remains builder-controlled; see VERIFICATION.md.
 
 Deadline in the organizer's announcement: October 14, 2026 23:59 ET, October 15 05:59 Europe/Paris. Recheck the submission portal's displayed deadline when filing.

@@ -1,7 +1,8 @@
-import {NETWORKS,address,amountUnits,formatUnits,createInvoice,validateInvoice,canonical,paymentLink,decodeInvoice,verifyReceipt,hashValue,assertReceiptAssignment} from './core.mjs?v=1.4.1';
-import {createWalletSession,walletErrorMessage} from './wallet.mjs?v=1.4.1';
-import {prepareJSONExport,verifiedReceiptExport,saveJSONFile,attachJSONDownload} from './export.mjs?v=1.4.1';
-import {MAINNET_DEMO} from './demo.mjs?v=1.4.1';
+import {NETWORKS,address,amountUnits,formatUnits,createInvoice,validateInvoice,canonical,paymentLink,decodeInvoice,verifyReceipt,hashValue,assertReceiptAssignment} from './core.mjs?v=1.4.2';
+import {createWalletSession,walletErrorMessage} from './wallet.mjs?v=1.4.2';
+import {prepareJSONExport,verifiedReceiptExport,saveJSONFile,attachJSONDownload} from './export.mjs?v=1.4.2';
+import {MAINNET_DEMO} from './demo.mjs?v=1.4.2';
+import {recordedTransferHash} from './workspace.mjs?v=1.4.2';
 const $=id=>document.getElementById(id),STORE='arc-ledger-v1';
 let invoices=[],receipts={},account=null,current=null,currentReceipt=null,provider=null,wallet=null,paymentBusy=false;
 const broadcasts=new Map();
@@ -9,6 +10,7 @@ let assignments={};
 try {const s=JSON.parse(localStorage.getItem(STORE)||'{}');if(Array.isArray(s.invoices))invoices=s.invoices.slice(0,200).map(validateInvoice);if(s.assignments&&typeof s.assignments==='object')for(const [key,id] of Object.entries(s.assignments)){if(/^(5042|5042002):0x[a-f0-9]{64}$/.test(key)&&invoices.some(i=>i.id===id&&key.startsWith(i.chainId+':')))assignments[key]=id;}/* Assignments are bookkeeping hints, never proof of payment. Reverify receipts after reload. */}catch{invoices=[];}
 function notice(message,ok=false){$('notice').textContent=message;$('notice').hidden=false;$('notice').className=ok?'ok':'';}
 function persist(){try{localStorage.setItem(STORE,JSON.stringify({invoices,assignments}));}catch{notice('Browser storage is unavailable. Export your request before leaving.');}}
+function trackedHash(invoice){return invoice?(broadcasts.get(invoice.id)||recordedTransferHash(invoice,assignments)):null;}
 function el(tag,text,className){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(className)e.className=className;return e;}
 function show(view){document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!==view);document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('active',n.dataset.view===view));if(view==='verify')renderSelect();window.scrollTo({top:0,behavior:'smooth'});}
 function action(label,fn,className='button ghost'){const b=el('button',label,className);b.type='button';b.addEventListener('click',()=>Promise.resolve().then(fn).catch(e=>notice(e.message)));return b;}
@@ -53,10 +55,10 @@ function recordReceipt(invoice,result){
 }
 function render(){const mainnetPaid=invoices.filter(i=>i.chainId===5042&&receipts[i.id]?.status==='paid'),allPaid=invoices.filter(i=>receipts[i.id]?.status==='paid');$('stat-paid').textContent=allPaid.length;$('stat-open').textContent=invoices.filter(i=>receipts[i.id]?.status!=='paid'&&i.expiresAt>Date.now()).length;$('stat-total').replaceChildren(el('span',formatUnits(mainnetPaid.reduce((s,i)=>s+amountUnits(i.amount),0n))),el('span',' USDC','unit'));
  const list=$('requests');list.replaceChildren();if(!invoices.length){const empty=el('div',undefined,'empty');empty.append(el('div','↗','empty-symbol'),el('h3','A clean start.'),el('p','Create your first request. Your payment trail starts here.'),action('Create a request →',()=>show('create'),'button primary'));list.append(empty);}
- invoices.slice(0,12).forEach(i=>{const row=el('div',undefined,'row'),left=el('div'),right=el('div',undefined,'row-actions');const paid=receipts[i.id]?.status==='paid';left.append(el('strong',i.reference),el('p',i.id+' · '+NETWORKS[i.chainId].name),el('span',i.amount+' USDC'));right.append(el('span',paid?'Verified':i.expiresAt<Date.now()?'Expired':'Awaiting payment',paid?'pill success':'pill neutral'),action('Open',()=>openPayment(i)),action('Verify',()=>{show('verify');$('verify-request').value=i.id;}));row.append(left,right);list.append(row);});renderSelect();}
+ invoices.slice(0,12).forEach(i=>{const row=el('div',undefined,'row'),left=el('div'),right=el('div',undefined,'row-actions');const paid=receipts[i.id]?.status==='paid';left.append(el('strong',i.reference),el('p',i.id+' · '+NETWORKS[i.chainId].name),el('span',i.amount+' USDC'));right.append(el('span',paid?'Verified':recordedTransferHash(i,assignments)?'Recheck transfer':i.expiresAt<Date.now()?'Expired':'Not verified',paid?'pill success':'pill neutral'),action('Open',()=>openPayment(i)),action('Verify',()=>{show('verify');$('verify-request').value=i.id;$('transaction-hash').value=trackedHash(i)||'';$('receipt').hidden=true;}));row.append(left,right);list.append(row);});renderSelect();}
 function renderSelect(){const select=$('verify-request'),prior=select.value;select.replaceChildren();if(!invoices.length){select.append(el('option','Create or import a payment request first'));select.disabled=true;}else{select.disabled=false;for(const i of invoices){const o=el('option',i.reference+' · '+i.amount+' USDC · '+NETWORKS[i.chainId].name);o.value=i.id;select.append(o);}if(invoices.some(i=>i.id===prior))select.value=prior;}}
 function detail(container,entries){container.replaceChildren();for(const [key,value]of entries){container.append(el('dt',key),el('dd',value));}}
-function openPayment(invoice){if(paymentBusy){notice('Finish the current wallet review before opening another request.');return;}current=validateInvoice(invoice);$('payment-summary').replaceChildren(el('span',NETWORKS[current.chainId].name,current.chainId===5042?'pill warning':'pill neutral'),el('h2',current.reference));const amount=el('p',current.amount,'payment-amount');amount.append(el('small',' USDC'));const d=el('dl');detail(d,[['Recipient',current.recipient],['Request',current.id],['Expires',new Date(current.expiresAt).toLocaleString()],...(current.expectedPayer?[['Expected payer',current.expectedPayer]]:[])]);$('payment-summary').append(amount,d);$('payment-progress').textContent='';$('payment-progress').className='';$('pay-button').textContent=receipts[current.id]?.status==='paid'?'Transfer already verified':broadcasts.has(current.id)?'Recheck transaction receipt →':'Review payment in wallet →';$('pay-button').disabled=receipts[current.id]?.status==='paid'||current.expiresAt<Date.now()&&!broadcasts.has(current.id);$('test-funds').hidden=current.chainId!==5042002;$('manual-recipient').value=current.recipient;$('manual-amount').textContent=current.amount+' USDC on '+NETWORKS[current.chainId].name;renderPayers();show('pay');}
+function openPayment(invoice){if(paymentBusy){notice('Finish the current wallet review before opening another request.');return;}current=validateInvoice(invoice);$('payment-summary').replaceChildren(el('span',NETWORKS[current.chainId].name,current.chainId===5042?'pill warning':'pill neutral'),el('h2',current.reference));const amount=el('p',current.amount,'payment-amount');amount.append(el('small',' USDC'));const d=el('dl');detail(d,[['Recipient',current.recipient],['Request',current.id],['Expires',new Date(current.expiresAt).toLocaleString()],...(current.expectedPayer?[['Expected payer',current.expectedPayer]]:[])]);$('payment-summary').append(amount,d);$('payment-progress').textContent=trackedHash(current)?'A transfer hash is recorded for this request. Recheck it before considering another payment. This button will not send a new transaction.':'';$('payment-progress').className='';$('pay-button').textContent=receipts[current.id]?.status==='paid'?'Transfer already verified':Boolean(trackedHash(current))?'Recheck transaction receipt →':'Review payment in wallet →';$('pay-button').disabled=receipts[current.id]?.status==='paid'||current.expiresAt<Date.now()&&!Boolean(trackedHash(current));$('test-funds').hidden=current.chainId!==5042002;$('manual-recipient').value=current.recipient;$('manual-amount').textContent=current.amount+' USDC on '+NETWORKS[current.chainId].name;renderPayers();show('pay');}
 function walletSession(){
  const injected=window.ethereum?.providers?.find(p=>p.isMetaMask)||window.ethereum;
  if(!wallet||provider!==injected){wallet?.dispose();provider=injected;wallet=createWalletSession(provider,{onChange:a=>{account=a;$('connect').textContent=a?a.slice(0,6)+'…'+a.slice(-4):'Connect wallet';renderPayers();}});}
@@ -76,14 +78,14 @@ $('choose-payer').onclick=async()=>{
  $('payment-progress').className='';$('payment-progress').textContent='Open MetaMask and connect the account you want to pay from.';
  try{await walletSession().choosePayer();$('payment-progress').textContent=account===current?.recipient?'The recipient is still selected. Select your other authorized account under Pay from, or connect it with Choose payer in MetaMask.':'Payer connected. Review the amount and recipient, then click Review payment in wallet.';$('notice').hidden=true;}
  catch(e){$('payment-progress').className='payment-error';$('payment-progress').textContent=walletErrorMessage(e);}
- finally{paymentBusy=false;$('choose-payer').disabled=false;$('connect').disabled=false;$('pay-button').disabled=receipts[current?.id]?.status==='paid'||current?.expiresAt<Date.now()&&!broadcasts.has(current?.id);renderPayers();}
+ finally{paymentBusy=false;$('choose-payer').disabled=false;$('connect').disabled=false;$('pay-button').disabled=receipts[current?.id]?.status==='paid'||current?.expiresAt<Date.now()&&!Boolean(trackedHash(current));renderPayers();}
 };
 $('payer-account').onchange=async()=>{
  if(paymentBusy)return;
  const selected=$('payer-account').value;paymentBusy=true;$('payer-account').disabled=true;$('pay-button').disabled=true;$('choose-payer').disabled=true;$('connect').disabled=true;
- try{await walletSession().selectAccount(selected);$('payment-progress').textContent='';$('payment-progress').className='';$('notice').hidden=true;}
+ try{await walletSession().selectAccount(selected);$('payment-progress').textContent=trackedHash(current)?'A transfer hash is recorded for this request. Recheck it before considering another payment. This button will not send a new transaction.':'';$('payment-progress').className='';$('notice').hidden=true;}
  catch(e){$('payment-progress').className='payment-error';$('payment-progress').textContent=walletErrorMessage(e);}
- finally{paymentBusy=false;$('choose-payer').disabled=false;$('connect').disabled=false;$('pay-button').disabled=receipts[current?.id]?.status==='paid'||current?.expiresAt<Date.now()&&!broadcasts.has(current?.id);renderPayers();}
+ finally{paymentBusy=false;$('choose-payer').disabled=false;$('connect').disabled=false;$('pay-button').disabled=receipts[current?.id]?.status==='paid'||current?.expiresAt<Date.now()&&!Boolean(trackedHash(current));renderPayers();}
 };
 async function connect(){const b=$('connect');b.disabled=true;try{account=await walletSession().connect();return account;}finally{b.disabled=paymentBusy;}}
 function renderReceipt(invoice,result){currentReceipt={invoice,result};$('receipt').hidden=false;$('receipt-status').textContent=result.status==='paid'?'Verified on Arc':result.status;$('receipt-status').className='pill '+(result.status==='paid'?'success':result.status==='pending'?'warning':'failure');$('receipt-heading').textContent=result.status==='paid'?'Transfer verified.':result.status==='pending'?'Waiting for confirmation.':'Payment not verified.';$('receipt-reason').textContent=result.reason||'Check the transfer details before assigning this receipt to a request.';const entries=[['Network',NETWORKS[invoice.chainId].name],['Request',invoice.id],['Transaction',result.hash]];if(result.status==='paid')entries.push(['Amount',result.amount+' USDC'],['From',result.from],['To',result.to],['Fee',result.fee+' USDC'],['Block',result.blockNumber],['Paid at',new Date(result.timestamp).toLocaleString()],['Request association',result.binding==='reference'?'Legacy on-chain reference':'Selected locally; confirm which request this payment settles'],['Request digest (local)',result.fingerprint]);detail($('receipt-data'),entries);$('explorer-link').href=NETWORKS[invoice.chainId].explorer+'/tx/'+hashValue(result.hash);$('export-receipt').hidden=result.status!=='paid';}
@@ -100,7 +102,7 @@ $('pay-button').onclick=async()=>{
  if(paymentBusy)return;
  const b=$('pay-button'),i=current;paymentBusy=true;b.disabled=true;$('connect').disabled=true;$('choose-payer').disabled=true;$('payer-account').disabled=true;
  $('payment-progress').className='';
- let hash=i?broadcasts.get(i.id):null;
+ let hash=trackedHash(i);
  try{
   if(!i)throw new Error('No request selected.');
   if(!hash){
@@ -108,7 +110,7 @@ $('pay-button').onclick=async()=>{
    hash=sent.hash;broadcasts.set(i.id,hash);
   }
   $('transaction-hash').value=hash;
-  $('payment-progress').textContent='Transaction sent: '+hash+'. Checking inclusion…';
+  $('payment-progress').textContent='Checking transfer: '+hash+'. Checking inclusion…';
   saveInvoice(i);
   for(let attempt=0;attempt<5;attempt++){
    const result=await verifyReceipt(i,hash);
@@ -124,8 +126,8 @@ $('pay-button').onclick=async()=>{
   $('payment-progress').className='payment-error';
   $('payment-progress').textContent=hash?'Transaction hash: '+hash+'. '+message+' Recheck this receipt before sending another payment.':message+(e.phase==='send'?' Check MetaMask Activity before retrying; no transaction hash was returned.':' No transaction was sent.');
  }finally{
-  paymentBusy=false;b.disabled=receipts[current?.id]?.status==='paid'||!!current&&current.expiresAt<Date.now()&&!broadcasts.has(current.id);$('connect').disabled=false;$('choose-payer').disabled=false;renderPayers();
-  b.textContent=i&&receipts[i.id]?.status==='paid'?'Transfer already verified':i&&broadcasts.has(i.id)?'Recheck transaction receipt →':'Review payment in wallet →';
+  paymentBusy=false;b.disabled=receipts[current?.id]?.status==='paid'||!!current&&current.expiresAt<Date.now()&&!Boolean(trackedHash(current));$('connect').disabled=false;$('choose-payer').disabled=false;renderPayers();
+  b.textContent=i&&receipts[i.id]?.status==='paid'?'Transfer already verified':i&&Boolean(trackedHash(i))?'Recheck transaction receipt →':'Review payment in wallet →';
  }
 };
 $('export-workspace').onclick=()=>download('arc-ledger-workspace.json',{version:1,invoices});$('import-workspace').onclick=()=>$('import-file').click();$('import-file').onchange=async()=>{try{const file=$('import-file').files[0];if(!file)return;if(file.size>300000)throw new Error('Import file exceeds 300 KB.');const input=JSON.parse(await file.text());const items=Array.isArray(input.invoices)?input.invoices:[input];if(items.length>200)throw new Error('Import at most 200 requests.');const checked=items.map(validateInvoice),merged=[...invoices];for(const i of checked){const old=merged.find(x=>x.id===i.id);if(old&&canonical(old)!==canonical(i))throw new Error('Import contains conflicting request IDs. Nothing was imported.');if(!old)merged.push(i);}if(merged.length>200)throw new Error('Workspace would exceed 200 requests.');invoices=merged;persist();render();notice('Requests imported. Payment claims must be verified against the chain.',true);}catch(e){notice(e.message);}finally{$('import-file').value='';}};

@@ -1,11 +1,11 @@
 # Arc Ledger — application draft
 
-Status: prepared, not submitted. Replace the pending live URL only after public deployment succeeds.
+Status: prepared, not submitted. Public deployment is live; final portal fields and participant declarations still need checking.
 
 Project: Arc Ledger
 Repository: https://github.com/laurenkumar/arc_ledger
 Builder profile: https://github.com/laurenkumar
-Public live demo: PENDING VERCEL DEPLOYMENT
+Public live demo: https://arcledger-roan.vercel.app/
 
 ## Short description
 
@@ -20,7 +20,7 @@ Payments and fees use Arc's native USDC interface. Amounts use exact fixed-point
 Chain: Arc Mainnet, 5042.
 Builder demonstration transaction: https://explorer.arc.io/tx/0x84358a18cb166f494401757748a5e4be21f24aead683549306f89b2f20f9f972
 Reported receipt: 1 USDC, 0.00042-USDC fee, block 25917473, October 14 2026 11:49:16 UTC.
-Code validation: 63 unit tests and static asset/element integrity checks. Mainnet receipt supplied and exercised by the builder; source environment did not independently reload that transaction.
+Code validation: 65 unit tests and static asset/element integrity checks. The public browser demo independently re-read the transaction from Arc RPC on October 14 at 13:06:13 UTC and exported a matching receipt. No new funds were sent during verification.
 
 ## Limitations and authorship
 
