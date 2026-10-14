@@ -1,0 +1,34 @@
+# Arc Ledger — application draft
+
+Status: prepared, not submitted. Replace the pending live URL only after public deployment succeeds.
+
+Project: Arc Ledger
+Repository: https://github.com/laurenkumar/arc_ledger
+Builder profile: https://github.com/laurenkumar
+Public live demo: PENDING VERCEL DEPLOYMENT
+
+## Short description
+
+Arc Ledger helps freelancers and small businesses request native USDC and independently verify received transfers on Arc. Anyone can pay using their own wallet. The recipient verifies the exact amount, sender, recipient, network, successful inclusion and timestamp using only a transaction hash, without wallet access. Optional expected-payer checking, JSON receipt export and browser-local request tracking help keep an understandable payment record.
+
+## What uses Arc
+
+Payments and fees use Arc's native USDC interface. Amounts use exact fixed-point BigInt arithmetic. The app queries the Arc RPC to verify transaction inclusion and receipt status. A read-only mainnet-demo button lets reviewers recheck a builder-provided 1-USDC transaction without signing in to a wallet or sending funds. The app uses direct wallet transfers rather than deploying a custody contract.
+
+## Evidence
+
+Chain: Arc Mainnet, 5042.
+Builder demonstration transaction: https://explorer.arc.io/tx/0x84358a18cb166f494401757748a5e4be21f24aead683549306f89b2f20f9f972
+Reported receipt: 1 USDC, 0.00042-USDC fee, block 25917473, October 14 2026 11:49:16 UTC.
+Code validation: 63 unit tests and static asset/element integrity checks. Mainnet receipt supplied and exercised by the builder; source environment did not independently reload that transaction.
+
+## Limitations and authorship
+
+Standard transfer receipts prove transfer facts, not cryptographic invoice settlement. The request association is local bookkeeping, and duplicate-hash protection is limited to one browser workspace. This is an early prototype with no custody, private-key collection or claim of an independent security audit. The supplied transaction is a builder demonstration, not evidence of a commercial customer. Development used AI assistance; behavior was iterated and tested with the builder.
+
+## Final submission checks
+
+1. Open the production URL without signing in and verify the mainnet demo.
+2. Check wallet payment, external-transfer verification, shared links and receipt download on that URL. The host change creates a separate browser workspace.
+3. Fill the actual public URL, repository, builder profile and evidence into https://dorahacks.io/hackathon/arc-microgrants/detail.
+4. Check the portal's additional fields and participant declarations before sending. Do not claim submission until it returns a confirmation.

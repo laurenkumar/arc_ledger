@@ -1,0 +1,7 @@
+node_modules/
+.vercel/
+.openai/
+.env
+.env.*
+site.tar.gz
+*.log
